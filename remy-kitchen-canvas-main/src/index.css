@@ -1,0 +1,131 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ------------------- BASE THEME VARIABLES ------------------- */
+@layer base {
+  :root {
+    --background: 240 30% 98%;
+    --foreground: 237 95% 19%;
+    --card: 240 30% 98%;
+    --card-foreground: 237 95% 19%;
+    --popover: 240 30% 98%;
+    --popover-foreground: 237 95% 19%;
+    --primary: 237 95% 19%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 235 85% 45%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 20% 90%;
+    --muted-foreground: 237 50% 40%;
+    --accent: 235 85% 45%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 237 50% 80%;
+    --input: 237 50% 80%;
+    --ring: 237 95% 19%;
+    --radius: 1rem;
+  }
+
+  .dark {
+    --background: 237 95% 10%;
+    --foreground: 240 20% 98%;
+    --card: 237 85% 15%;
+    --card-foreground: 240 20% 98%;
+    --popover: 237 85% 15%;
+    --popover-foreground: 240 20% 98%;
+    --primary: 235 85% 65%;
+    --primary-foreground: 237 95% 10%;
+    --secondary: 237 70% 25%;
+    --secondary-foreground: 240 20% 98%;
+    --muted: 237 70% 20%;
+    --muted-foreground: 240 10% 70%;
+    --accent: 237 70% 25%;
+    --accent-foreground: 240 20% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 237 70% 25%;
+    --input: 237 70% 25%;
+    --ring: 235 85% 65%;
+    --radius: 1rem;
+  }
+
+  /* Base typography and layout */
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-poppins;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-poppins font-bold text-kitchance-navy-dark;
+  }
+
+  p {
+    @apply font-inter text-kitchance-deep-blue;
+  }
+
+  .section {
+    @apply py-20 px-4 md:px-8 bg-kitchance-blue-pale/30;
+  }
+
+  .section-title {
+    @apply text-3xl md:text-4xl font-bold text-center mb-12 text-kitchance-navy-dark;
+  }
+
+  .hover-grow {
+    @apply transition-transform duration-300 hover:scale-105;
+  }
+
+  .fade-in {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+  }
+
+  .fade-in.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .gradient-navy {
+    @apply bg-gradient-to-r from-kitchance-navy-dark to-kitchance-blue-deep;
+  }
+
+  .gradient-light {
+    @apply bg-gradient-to-r from-kitchance-blue-pale to-white;
+  }
+
+  .gradient-button {
+    @apply bg-gradient-to-r from-kitchance-navy-dark to-kitchance-blue-medium hover:from-kitchance-blue-deep hover:to-kitchance-blue-medium;
+  }
+}
+
+/* ------------------- UTILITY EXTENSIONS ------------------- */
+@layer utilities {
+  p {
+    @apply font-inter text-kitchance-deep-blue;
+  }
+
+  .animate-gradient-move {
+    animation: gradient-move 6s ease infinite;
+  }
+}
+
+/* ------------------- ANIMATIONS ------------------- */
+@keyframes gradient-move {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
