@@ -1,0 +1,5 @@
+✅ RoomGPT Generation Successful!
+
+📝 Prompt used: latest_prompt.txt
+🖼️ Image URL: https://stream.replicate.com/v1/files/yswh-w66375yuy2p6my4ckv4vbhl2gdm5x72mgyaf65udako66m2fjeoq
+📁 Saved image as: generated_kitchen_2025-04-20_20-53-54.jpg

@@ -1,0 +1,15 @@
+
+### Customer Preferences:
+User: Hi, Remy. I'm Mary.\nRemy: Nice to meet you, Mary. I'm here to help design your dream kitchen. Is gonna be fun. So tell me, how do you want your kitchen to feel?\nUser: I want it to be very cozy. And I want to add some lime green colors and view.\nRemy: Cozy with a splash of lime green and a view. Sounds refreshing. Are there any must haves for your kitchen? Like maybe an island, a big pantry, or anything else?\nUser: Can we make it look a bit like a dessert?\nRemy: A dessert inspired kitchen? That sounds deliciously unique. Are you thinking more like a sweet pastel bakery vibe or something rich and decadent like chocolate tones?\nUser: Chocolate croutons
+
+### Detected Features:
+No specific window positions detected.
+
+### Design Guidelines:
+- No window positions detected. Do not add new windows, doors, or walls unless explicitly specified.
+- (100%) Use scandinavian design principles.
+- Reflect a cozy atmosphere throughout the space.
+- Design the kitchen with a chef focus.
+
+### Notes:
+Respect the existing structure. Do not move or add windows, doors, or walls. Focus on layout optimization and styling only.
