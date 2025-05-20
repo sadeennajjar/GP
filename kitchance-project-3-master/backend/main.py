@@ -1,22 +1,57 @@
-import webbrowser
 import os
-import datetime
-import subprocess
 import sqlite3
 import bcrypt
-from flask import Flask, request, jsonify
-from flask_cors import CORS
+import datetime
+import time
+import json
+import requests
+from flask import Flask, request, jsonify, send_from_directory
 from database import save_transcript, initialize_db
 from init_db import initialize_db
+import base64
+from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app)  # Allow frontend access
-
-# Initialize DB and tables
 initialize_db()
+CORS(app, supports_credentials=True) 
+# === CORS Support ===
+def extract_full_transcript(data):
+    try:
+        messages = data.get("message", {}).get("artifact", {}).get("messages", [])
+        lines = []
+        for msg in messages:
+            role = msg.get("role")
+            text = msg.get("message") or msg.get("content") or ""
+            if role and text:
+                lines.append(f"{role.capitalize()}: {text.strip()}")
+        return "\n".join(lines)
+    except Exception as e:
+        print("Error extracting transcript:", e)
+        return ""
 
-# === Auth Routes ===
+@app.after_request
+def add_cors_headers(response):
+    origin = request.headers.get("Origin")
+    allowed_origins = [
+        "http://localhost:8080",
+        " https://d28c-94-249-51-113.ngrok-free.app"
+    ]
+    if origin in allowed_origins:
+        response.headers["Access-Control-Allow-Origin"] = origin
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+    return response
+@app.route('/routes')
+def list_routes():
+    import urllib
+    routes = []
+    for rule in app.url_map.iter_rules():
+        methods = ','.join(rule.methods)
+        url = urllib.parse.unquote(str(rule))
+        routes.append(f"{url} [{methods}]")
+    return "<br>".join(routes)
 
+# === Authentication Routes ===
 @app.route('/api/signup', methods=['POST'])
 def signup():
     data = request.get_json()
@@ -25,18 +60,14 @@ def signup():
 
     conn = sqlite3.connect("kitchance_transcripts.db")
     c = conn.cursor()
-
-    # Check for duplicate
     c.execute("SELECT * FROM users WHERE email = ?", (email,))
     if c.fetchone():
         return jsonify({"success": False, "message": "Email already exists"}), 400
 
-    # Hash password and insert
     hashed_pw = bcrypt.hashpw(password, bcrypt.gensalt())
     c.execute("INSERT INTO users (email, password) VALUES (?, ?)", (email, hashed_pw))
     conn.commit()
     conn.close()
-
     return jsonify({"success": True})
 
 @app.route('/api/login', methods=['POST'])
@@ -55,122 +86,74 @@ def login():
         return jsonify({"success": True})
     return jsonify({"success": False, "message": "Invalid email or password"}), 401
 
-# === Transcript Routes ===
-
-def get_latest_transcript():
-    try:
-        conn = sqlite3.connect('kitchance_transcripts.db')
-        cursor = conn.cursor()
-        cursor.execute('''
-            SELECT transcript FROM transcripts 
-            ORDER BY timestamp DESC 
-            LIMIT 1
-        ''')
-        result = cursor.fetchone()
-        conn.close()
-        return result[0] if result else None
-    except sqlite3.Error as e:
-        print(f"Database error: {e}")
-        return None
-
-@app.route('/latest-transcript', methods=['GET'])
-def latest_transcript():
-    transcript = get_latest_transcript()
-    if transcript:
-        return jsonify({"transcript": transcript})
-    return jsonify({"error": "No transcript found"}), 404
-
 @app.route('/')
 def home():
     return "KitChance Transcript Webhook is live!"
 
-@app.route('/transcript', methods=['POST'])
+@app.route('/latest-transcript', methods=['GET'])
+def latest_transcript():
+    try:
+        conn = sqlite3.connect('kitchance_transcripts.db')
+        cursor = conn.cursor()
+        cursor.execute('SELECT transcript FROM transcripts ORDER BY timestamp DESC LIMIT 1')
+        result = cursor.fetchone()
+        conn.close()
+        return jsonify({"transcript": result[0]}) if result else jsonify({"error": "No transcript found"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# ✅ FIXED: Route now correctly extracts subpath and serves from correct folder
+@app.route('/outputs/<path:filename>')
+def serve_generated_image(filename):
+    return send_from_directory('outputs', filename)
+# === Transcript → Forward to SDXL pod ===
+@app.route('/transcript', methods=['POST', 'OPTIONS'])
+@app.route('/transcript', methods=['POST', 'OPTIONS'])
 def receive_transcript():
+    if request.method == "OPTIONS":
+        return '', 204
+
     try:
         data = request.json
-        print("# Full data received from VAPI:", data)
+        print("📨 Full payload:", data)
 
-        if not data:
-            return jsonify({"error": "No JSON data received"}), 400
-
-        # Extract transcript
-        transcript_text = None
-
-        if 'transcript' in data:
-            transcript_text = data['transcript']
-        else:
-            message_data = data.get('message', {})
-            tool_calls = message_data.get('toolCalls', [])
-            for call in tool_calls:
-                if call.get('function', {}).get('name') == 'SendTranscriptToKitChance':
-                    try:
-                        args = call['function']['arguments']
-                        if isinstance(args, str):
-                            import json
-                            args = json.loads(args)
-                        transcript_text = args.get('transcript', '')
-                        break
-                    except Exception as e:
-                        print(f"Error parsing arguments: {e}")
+        transcript_text = data.get("transcript", "")
 
         if not transcript_text:
-            return jsonify({"error": "No transcript found in the data"}), 400
+            transcript_text = extract_full_transcript(data)
 
-        # Extract user preferences
-        import re
-        user_name = re.search(r"name is ([^\.]+)", transcript_text)
-        user_name = user_name.group(1) if user_name else None
+        if not transcript_text:
+            return jsonify({"error": "Transcript not found"}), 400
 
-        kitchen_style = re.search(r"(modern|rustic|cozy|traditional) kitchen", transcript_text, re.I)
-        kitchen_style = kitchen_style.group(1) if kitchen_style else None
+        print("📝 Extracted transcript:", transcript_text)
 
-        materials = re.search(r"with ([^,\.]+)", transcript_text)
-        materials = materials.group(1) if materials else None
+        # Forward to SDXL backend
+        sdxl_backend_url = "https://8910-213-192-2-87.ngrok-free.app/generate_kitchen"
+        response = requests.post(
+            sdxl_backend_url,
+            headers={"Content-Type": "application/json"},
+            json={"transcript": transcript_text}
+        )
 
-        usage = re.search(r"made for ([^,\.]+)", transcript_text)
-        usage = usage.group(1) if usage else None
+        if response.status_code != 200:
+            print("❌ SDXL backend error:", response.text)
+            return jsonify({"error": "SDXL backend error"}), 500
 
-        layout = re.search(r"(island|open space|L-shaped|U-shaped)", transcript_text, re.I)
-        layout = layout.group(1) if layout else None
+        result = response.json()
+        image_url = result.get("image_url", "")
+        print("✅ Image URL received:", image_url)
 
-        appliances = re.search(r"(coffee bar|double oven|big fridge)", transcript_text, re.I)
-        appliances = appliances.group(1) if appliances else None
-
-        # Save to DB
-        save_transcript(user_name, kitchen_style, materials, usage, layout, appliances, transcript_text)
-
-        # Save to file
-        with open("latest_transcript.txt", "w", encoding="utf-8") as f:
-            f.write(transcript_text)
-
-        # Trigger kitchen generation
-        print("🚀 Generating kitchen using latest transcript...")
-        result = subprocess.run(["python", "generation/kitchen_generation.py"], capture_output=True, text=True)
-        print("📃 STDOUT:\n", result.stdout)
-        print("🐞 STDERR:\n", result.stderr)
-
-        # Auto open generated image
-        timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        filename = f"generated_kitchen_{timestamp}.jpg"
-        image_path = os.path.abspath(filename)
-        webbrowser.open(f"file://{image_path}")
-        print(f"🖼️ Image opened: {image_path}")
+        if not image_url:
+            return jsonify({"error": "No image URL returned"}), 500
 
         return jsonify({
-            "status": "received",
-            "extracted_data": {
-                "user_name": user_name,
-                "kitchen_style": kitchen_style,
-                "materials": materials,
-                "usage": usage,
-                "layout": layout,
-                "appliances": appliances
-            }
-        }), 200
+            "status": "success",
+            "image_url": image_url
+        })
 
     except Exception as e:
-        print(f"Error processing transcript: {e}")
-        return jsonify({"error": "Internal server error"}), 500
+        print("❌ Error in /transcript:", e)
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(port=4000)
+    app.run(host="0.0.0.0", port=4000)

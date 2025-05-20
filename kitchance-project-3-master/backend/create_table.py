@@ -17,6 +17,8 @@ def create_table():
         transcript TEXT
     )
     ''')
+    print("✅ Table created (or already exists).")
+
 
     conn.commit()  # Save the changes
     conn.close()   # Close the connection

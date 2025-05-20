@@ -10,7 +10,7 @@ const Login = () => {
     e.preventDefault();
 
     try {
-      const res = await fetch(' https://35b9-86-108-13-69.ngrok-free.app/api/login', {
+      const res = await fetch('https://d28c-94-249-51-113.ngrok-free.app/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -33,6 +33,7 @@ const Login = () => {
       alert('Server error. Please try again later.');
     }
   };
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-white to-kitchance-blue-pale/30 flex items-center justify-center px-4 relative">

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Box, Typography, Button } from "@mui/material";
 import StopIcon from "@mui/icons-material/Stop";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
@@ -9,68 +10,45 @@ import { motion, useAnimation } from "framer-motion";
 
 const RemyActive = () => {
   const vapiRef = useRef<Vapi | null>(null);
-  const [transcript, setTranscript] = useState<string>("");
+  const transcriptRef = useRef<string>("");
+  const [transcriptDisplay, setTranscriptDisplay] = useState<string>("");
   const [isTalking, setIsTalking] = useState<boolean>(false);
-  const [imageUrl, setImageUrl] = useState<string>("");
   const micControls = useAnimation();
-  const hasGenerated = useRef(false);
+  const navigate = useNavigate();
 
-  console.log("🆕 RemyActive component loaded");
-
-  const triggerGeneration = async () => {
-    console.log("✅ TriggerGeneration called");
-    console.log("🧾 Transcript before clean:", transcript);
-
-    const cleanTranscript = transcript.trim();
-    const wordCount = cleanTranscript.split(" ").length;
-
-    console.log("📏 Word count:", wordCount);
-
-    if (!cleanTranscript || wordCount < 10) {
-      console.warn("⛔ Transcript too short (<10 words), skipping");
-      return;
-    }
-
-    if (hasGenerated.current) {
-      console.warn("⛔ Already generated this session");
-      return;
-    }
-
-    hasGenerated.current = true;
+  const triggerKitchenGeneration = async () => {
+    const userTranscriptOnly = transcriptRef.current
+      .split("\n")
+      .filter((line) => line.startsWith("User:"))
+      .map((line) => line.replace("User: ", "").trim())
+      .join(" ")
+      .trim();
 
     try {
-      const response = await fetch("https://1f41-86-108-13-69.ngrok-free.app/transcript", {
+      const res = await fetch("https://8910-213-192-2-87.ngrok-free.app/generate_kitchen", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ transcript: cleanTranscript }),
+        body: JSON.stringify({ transcript: userTranscriptOnly }),
       });
 
-      const data = await response.json();
-      console.log("📥 Backend response:", data);
+      const data = await res.json();
 
-      if (response.ok && data.image_url) {
-        setImageUrl(data.image_url);
-        console.log("✅ Received image URL:", data.image_url);
+      if (data.image_url) {
+        const imageUrl = data.image_url;
+        navigate(`/remy-result?image=${encodeURIComponent(imageUrl)}`);
       } else {
-        console.error("❌ Backend error or no image_url:", data);
+        console.error("No image_url in response", data);
       }
-    } catch (err) {
-      console.error("❌ Fetch failed:", err);
+    } catch (error) {
+      console.error("Error generating kitchen:", error);
     }
   };
 
   const startRemy = async () => {
-    console.log("▶️ Starting Remy...");
-    if (!vapiRef.current) return;
+    if (!vapiRef.current || isTalking) return;
 
-    if (isTalking) {
-      console.warn("⚠️ Already in call");
-      return;
-    }
-
-    hasGenerated.current = false;
-    setTranscript("");
-    setImageUrl("");
+    transcriptRef.current = "";
+    setTranscriptDisplay("");
     setIsTalking(true);
 
     vapiRef.current.on("call-start", () => {
@@ -83,21 +61,16 @@ const RemyActive = () => {
       setIsTalking(false);
 
       setTimeout(() => {
-        const cleaned = transcript.trim();
-        console.log("📜 Final transcript after delay:", cleaned);
-        console.log("📏 Word count:", cleaned.split(" ").length);
-        triggerGeneration();
-      }, 5000);
+        triggerKitchenGeneration();
+      }, 1000);
     });
 
     vapiRef.current.on("message", (msg) => {
-      console.log("💬 Message:", msg.role, msg.transcript);
-      if (msg.type === "transcript" && msg.role === "user") {
-        setTranscript((prev) => {
-          const updated = prev + " " + msg.transcript;
-          console.log("📝 User transcript updated:", updated.trim());
-          return updated;
-        });
+      if (msg.type === "transcript") {
+        const speaker = msg.role === "user" ? "User" : "Remy";
+        const line = `${speaker}: ${msg.transcript}`;
+        transcriptRef.current += line + "\n";
+        setTranscriptDisplay(transcriptRef.current.trim());
       }
     });
 
@@ -112,15 +85,28 @@ const RemyActive = () => {
   };
 
   const stopRemy = () => {
-    console.log("🛑 Stopping Remy...");
     vapiRef.current?.stop();
     setIsTalking(false);
+
+    const userTranscriptOnly = transcriptRef.current
+      .split("\n")
+      .filter((line) => line.startsWith("User:"))
+      .map((line) => line.replace("User: ", "").trim())
+      .join(" ")
+      .trim();
+
+    if (userTranscriptOnly.length > 5) {
+      navigate(`/remy-loading?transcript=${encodeURIComponent(userTranscriptOnly)}`);
+    } else {
+      console.warn("Transcript too short.");
+    }
   };
 
   useEffect(() => {
-    if (vapiRef.current) return;
-    console.log("🧠 Initializing Vapi...");
-    vapiRef.current = new Vapi("aa5b21bd-2199-423d-b1c1-83a9c3ab740a");
+    if (!vapiRef.current) {
+      console.log("🧠 Initializing Vapi...");
+      vapiRef.current = new Vapi("aa5b21bd-2199-423d-b1c1-83a9c3ab740a");
+    }
   }, []);
 
   return (
@@ -154,16 +140,7 @@ const RemyActive = () => {
           </Button>
         )}
 
-        <Button
-          onClick={triggerGeneration}
-          variant="outlined"
-          sx={{ mb: 2, ml: 2 }}
-          color="secondary"
-        >
-          🧪 Force Generation
-        </Button>
-
-        {transcript && (
+        {transcriptDisplay && (
           <Box
             sx={{
               background: "#fff",
@@ -175,27 +152,10 @@ const RemyActive = () => {
               fontStyle: "italic",
               color: "#333",
               whiteSpace: "pre-line",
+              mt: 3,
             }}
           >
-            {transcript.trim()}
-          </Box>
-        )}
-
-        {imageUrl && (
-          <Box sx={{ mt: 4 }}>
-            <Typography variant="h6" gutterBottom>
-              🖼️ Your Dream Kitchen:
-            </Typography>
-            <img
-              src={imageUrl}
-              alt="Generated Kitchen"
-              style={{
-                width: "100%",
-                maxWidth: "700px",
-                borderRadius: "10px",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-              }}
-            />
+            {transcriptDisplay}
           </Box>
         )}
       </Box>
