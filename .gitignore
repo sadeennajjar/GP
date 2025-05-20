@@ -1,0 +1,12 @@
+venv/
+kit_env/
+huggingface_cache/
+ngrok-stable-linux-amd64.zip
+ngrok-stable-linux-amd64.zip.1
+*.zip
+*.png
+*.jpg
+*.json
+tmp/
+outputs/
+output.json

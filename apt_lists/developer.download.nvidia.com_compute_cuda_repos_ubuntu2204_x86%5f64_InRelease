@@ -1,0 +1,34 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA256
+
+Origin: NVIDIA
+Label: NVIDIA CUDA
+Architecture: x86_64
+Date: Fri, 16 May 2025 19:03:59 +0000
+MD5Sum:
+ 51425995229c539ab15ec6480881f64b                                          7002665 Packages
+ 484ccf4c5b360c2af79be70f3efdb0e4                                          1683321 Packages.gz
+SHA1:
+ a30b1a459c0433e1c3c38ed9e327963d3f2f01a3                                  7002665 Packages
+ 23fafaa4acc9ab2e8cdc826c161de37ddec750ba                                  1683321 Packages.gz
+SHA256:
+ d4e9ce0d9204a6f2188f6b428901293d784bf276205d8104c62c87ddaf6b836a          7002665 Packages
+ 1fb91db6ce2131cb29f244d348b991a5f6f23809540b534a9c55232dfebeed18          1683321 Packages.gz
+Acquire-By-Hash: no
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.22 (GNU/Linux)
+
+iQIcBAEBCAAGBQJoJ8QkAAoJEKS0aZY7+GPMWDUP/3WJX+AC/mDmgBjEeUJjYg6B
+X9Fn6czqJbZDDu2NYybhugYSBYdLwiP2btu7WGEewfT6uJ2huCiFbDK0unZf7Le0
+ibHYRzybxLJQGrU9x6I1OnG4eMhwlVZVMU80aTKbU/SvHfLz5fDgcPIniHsATSMW
+EZyzS8xYoosXcmWprlmcmsSZ7jp/kbFKUzFjRwMj5rU+h+MLfD9UQ2DKQfh/m+7j
+ruFHBzBOadbcUAgW1JRfDLAcYwKsHj1NorRWDJf3LNalgCvpW5UnPtD5clX6zj/g
+8VnI9l7pyij1EPhqvsGPcqCTYWp2KI8SVzLOHj9sEbXgY0lbTqWyJTGiacKCRZf0
+c1Fj1Ob5myIzoe4Rv0HkYTf3422+orXT/+wz9SMwPcgz0O/YKQ8ouiOtL+qroEKh
+wBCgjLdQ1LqqRTRoO9DI32OyMW3YV+QsBCCk67kjnQHB0IcFangNOGCuEhe7sZ8P
+zNPbjNspNZgfeEqt6QHGcbSEbYqwWcMNrzBPrK9ouW/f253YYwDdA+jdTw5IhtZl
+0cESj6qP0XzY6V24JXxKZiHBRVi/CjbMW8zcu4HfhnUCeD3GrdAb8lbzqpqynDGs
+6/Dk3B8Z9B4S0SdWk7MPznw15SUd27smpCrsIa0KGM2liJWm5w39L5sajZmtutab
+Q434qsUVbqPRsIHRNCVN
+=gRzX
+-----END PGP SIGNATURE-----
